@@ -1,10 +1,17 @@
 package main
 
 import (
-	"file"
+	"fmt"
+	"public_tool"
 )
 
 func main() {
-	file.FileServer()
+	r, err := public_tool.NewRsaEncrypt()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	buf, _ := r.Encrypt([]byte("1"))
+	buf, _ = r.Decrypt(buf)
+	fmt.Println(string(buf))
 }
-
