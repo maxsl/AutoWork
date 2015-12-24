@@ -8,12 +8,12 @@ import (
 	"errors"
 )
 
-type RsaEncrypt struct {
+type Rsa struct {
 	pub *rsa.PublicKey
 	pri *rsa.PrivateKey
 }
 
-func NewRsaEncrypt() (*RsaEncrypt, error) {
+func NewRsaEncrypt() (*Rsa, error) {
 	pub := `-----BEGIN 公钥-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4XXxm9EAsOKVX/YgMHSM
 AM44gyPx8PdkXPeh0de94qTS2kyvFG5RJYSHI3xC+cyltnMzfFuDbjKB0/sfnfYP
@@ -51,15 +51,15 @@ JU75yOPwUGqUVW+8JDF1GUC6pjQCFZzZ7d0qdPD+vMHqM0S3hpX1sdqp2C9nql4F
 IEpw7qCwdfxiqWu4Be/TihDoKXSgz+i95tgiJxDDApv3VS/wTW2cYA==
 -----END 私钥-----`
 
-	rsaEncrypt := new(RsaEncrypt)
-	err := rsaEncrypt.Init([]byte(pub), []byte(pri))
+	r := new(Rsa)
+	err := r.Init([]byte(pub), []byte(pri))
 	if err != nil {
 		return nil, err
 	}
-	return rsaEncrypt, nil
+	return r, nil
 }
 
-func (self *RsaEncrypt) Init(pub, pri []byte) error {
+func (self *Rsa) Init(pub, pri []byte) error {
 	block, _ := pem.Decode(pub)
 	if block == nil {
 		return errors.New("public key error")
@@ -82,10 +82,10 @@ func (self *RsaEncrypt) Init(pub, pri []byte) error {
 	return nil
 }
 
-func (self *RsaEncrypt) Encrypt(Data []byte) ([]byte, error) {
+func (self *Rsa) Encrypt(Data []byte) ([]byte, error) {
 	return rsa.EncryptPKCS1v15(rand.Reader, self.pub, Data)
 }
 
-func (self *RsaEncrypt) Decrypt(data []byte) ([]byte, error) {
+func (self *Rsa) Decrypt(data []byte) ([]byte, error) {
 	return rsa.DecryptPKCS1v15(rand.Reader, self.pri, data)
 }

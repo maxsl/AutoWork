@@ -2,17 +2,29 @@ package file
 
 import "net/http"
 
+var AgentMap map[string]string = make(map[string]string)
+
 func FileServer() {
-	http.HandleFunc("/file/", route)
+	url()
 	http.ListenAndServe(":1789", nil)
 }
+
+func url() {
+	http.HandleFunc("/file/", route)
+}
+
 func route(w http.ResponseWriter, r *http.Request) {
-	k, ok := r.URL.Query()["key"]
 	defer r.Body.Close()
-	if ok && len(k) == 1 {
-		if k[0] == "ABCDEF" {
-			http.FileServer(http.Dir("./")).ServeHTTP(w, r)
-		}
-		w.Write([]byte("Sorry Have no."))
+	if r.URL.Path == "/file/" {
+		http.Error(w, "Request error.", 404)
+		return
 	}
+	k, ok := r.URL.Query()["key"]
+	if ok && len(k) == 1 {
+		if _, ok := AgentMap[k[0]]; ok {
+			http.FileServer(http.Dir("./")).ServeHTTP(w, r)
+			return
+		}
+	}
+	http.Error(w, "Request error.", 404)
 }
