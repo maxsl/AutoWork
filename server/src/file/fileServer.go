@@ -1,10 +1,11 @@
 package file
 
-import "net/http"
+import (
+	"alltype"
+	"net/http"
+)
 
-var AgentMap map[string]string = make(map[string]string)
-
-func FileServer() {
+func HttpServer() {
 	url()
 	http.ListenAndServe(":1789", nil)
 }
@@ -21,7 +22,7 @@ func route(w http.ResponseWriter, r *http.Request) {
 	}
 	k, ok := r.URL.Query()["key"]
 	if ok && len(k) == 1 {
-		if _, ok := AgentMap[k[0]]; ok {
+		if _, ok := alltype.AgentMap[k[0]]; ok {
 			http.FileServer(http.Dir("./")).ServeHTTP(w, r)
 			return
 		}
