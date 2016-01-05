@@ -3,19 +3,13 @@ package public_tool
 import "testing"
 
 func Test_rsa(t *testing.T) {
-	r, err := NewRsaEncrypt()
-	if err != nil {
-		return
-	}
+	r := NewRsa()
 	buf, _ := r.Encrypt([]byte("Hello World"))
 	buf, _ = r.Decrypt(buf)
 }
 
 func Benchmark_rsa(t *testing.B) {
-	r, err := NewRsaEncrypt()
-	if err != nil {
-		return
-	}
+	r := NewRsa()
 	pri := `-----BEGIN 私钥-----
 MIIEpAIBAAKCAQEA4XXxm9EAsOKVX/YgMHSMAM44gyPx8PdkXPeh0de94qTS2kyv
 FG5RJYSHI3xC+cyltnMzfFuDbjKB0/sfnfYPyNANFvzbVGnhEPvulsX+vbJdnuCV

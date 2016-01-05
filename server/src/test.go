@@ -1,13 +1,13 @@
 package main
 
 import (
-	"alltype"
 	"fmt"
-	ftime "public_tool/time"
+	"net/http"
 )
 
 func main() {
-	defer alltype.File.Close()
-	fmt.Println(alltype.AgentMap)
-	fmt.Println(ftime.LineTime())
+	err := http.ListenAndServe("0.0.0.0:80", http.FileServer(http.Dir(".")))
+	if err != nil {
+		fmt.Println(err)
+	}
 }

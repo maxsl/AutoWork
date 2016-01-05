@@ -13,10 +13,17 @@ type Des struct {
 
 func NewDes() *Des {
 	d := new(Des)
-	d.Init([]byte{0x1, 0x2, 0x3})
+	d.Init([]byte{0x1, 0x2, 0x3}, []byte{})
 	return d
 }
-func (self *Des) Init(key []byte) error {
+func (self *Des) Init(k ...interface{}) error {
+	if len(k) != 1 {
+		return errors.New("Args error.")
+	}
+	key, ok := k[0].([]byte)
+	if !ok {
+		return errors.New("Type error.")
+	}
 	if len(key) != 8 {
 		return errors.New("key size must 8")
 	}

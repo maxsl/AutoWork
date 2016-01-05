@@ -13,7 +13,7 @@ type Rsa struct {
 	pri *rsa.PrivateKey
 }
 
-func NewRsaEncrypt() (*Rsa, error) {
+func NewRsa() *Rsa {
 	pub := `-----BEGIN 公钥-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4XXxm9EAsOKVX/YgMHSM
 AM44gyPx8PdkXPeh0de94qTS2kyvFG5RJYSHI3xC+cyltnMzfFuDbjKB0/sfnfYP
@@ -52,14 +52,23 @@ IEpw7qCwdfxiqWu4Be/TihDoKXSgz+i95tgiJxDDApv3VS/wTW2cYA==
 -----END 私钥-----`
 
 	r := new(Rsa)
-	err := r.Init([]byte(pub), []byte(pri))
-	if err != nil {
-		return nil, err
-	}
-	return r, nil
+	r.Init([]byte(pub), []byte(pri))
+	return r
 }
 
-func (self *Rsa) Init(pub, pri []byte) error {
+//args 1 public_key args 2 private_key
+func (self *Rsa) Init(key ...interface{}) error {
+	if len(key) != 2 {
+		return errors.New("Args error.")
+	}
+	pub, ok := key[0].([]byte)
+	if !ok {
+		return errors.New("Type error.")
+	}
+	pri, ok := key[1].([]byte)
+	if !ok {
+		return errors.New("Type error.")
+	}
 	block, _ := pem.Decode(pub)
 	if block == nil {
 		return errors.New("public key error")

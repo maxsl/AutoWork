@@ -33,10 +33,3 @@ func (self *postMessage) Read(buf []byte) (int, error) {
 	self.Body = self.Body[n:]
 	return n, nil
 }
-
-type StartConfig struct {
-	Port string
-	IP   string
-}
-
-var Config StartConfig
