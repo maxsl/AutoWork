@@ -1,0 +1,268 @@
+package main
+
+import (
+	"bufio"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net"
+	"strings"
+	"sync"
+	"time"
+)
+import (
+	"net/http"
+	_ "net/http/pprof"
+)
+
+func main() {
+	con, err := net.Dial("tcp", "172.18.80.247:1789")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer con.Close()
+	lock := new(sync.Mutex)
+	r := getBufPool(con)
+	defer putBufPool(r)
+	go func(con net.Conn, r *bufio.Reader, l *sync.Mutex) {
+		for {
+			time.Sleep(1e9)
+			l.Lock()
+			s := Msg{Action: "Test.Ping"}
+			b, _ := json.Marshal(s)
+			con.Write(b)
+			con.Write([]byte("\r\n"))
+			line, _, err := r.ReadLine()
+			if err != nil {
+				for i := 0; i < 3; i++ {
+					con, err = net.Dial("tcp", "172.18.80.247:1789")
+					if err != nil {
+						fmt.Println("链接失败:", err)
+						continue
+					}
+					break
+				}
+			}
+			fmt.Println("这个是testPing:", string(line))
+			l.Unlock()
+		}
+	}(con, r, lock)
+
+	for {
+		lock.Lock()
+		s := Msg{Action: "scripts", Address: "127.0.0.1"}
+		b, _ := json.Marshal(s)
+		con.Write(b)
+		con.Write([]byte("\r\n"))
+		line, _, _ := r.ReadLine()
+		switch string(line) {
+		case "AlreadyExist":
+			fmt.Println(string(line))
+			return
+		}
+		lock.Unlock()
+		time.Sleep(3e9)
+	}
+}
+
+func smain() {
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+	lis, err := net.Listen("tcp", "0.0.0.0:1789")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer lis.Close()
+	for {
+		con, err := lis.Accept()
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		go Hander(con)
+	}
+}
+
+type Msg struct {
+	Action  string `json:action`
+	Address string `json:address`
+	JobID   int64  `json:jobid`
+	Remark  string `json:remark`
+}
+
+var empty []byte
+
+func Hander(con net.Conn) {
+	defer con.Close()
+	ip := strings.Split(con.RemoteAddr().String(), ":")[0]
+	defer statusMap.Del(ip)
+	if !statusMap.Add(ip) {
+		fmt.Fprint(con, "AlreadyExist\r\n")
+		return
+	}
+	buf := getBufPool(con)
+	defer putBufPool(buf)
+	for {
+		line, _, err := buf.ReadLine()
+		if err != nil {
+			return
+		}
+		msg, err := decode(line)
+		if err != nil {
+			fmt.Fprint(con, "UnknowType\r\n")
+			putJsonPool(msg)
+			continue
+		}
+		if b, err := handlerMsg(msg); err != nil {
+			fmt.Fprint(con, "JobExecError.\r\n")
+			putJsonPool(msg)
+			continue
+		} else {
+			con.Write(b)
+			con.Write([]byte{13, 10})
+		}
+		putJsonPool(msg)
+	}
+}
+
+func handlerMsg(msg *Msg) ([]byte, error) {
+	msg.JobID = NewID()
+	b, err := encode(msg)
+	if err != nil {
+		return empty, err
+	}
+	fmt.Println("收到的消息:", *msg)
+	handmsg(msg.Action, "127.0.0.1")
+	//fmt.Println(statusMap)
+	//执行对应操作
+	return b, nil
+}
+
+func handmsg(b string, ip string) {
+	switch b {
+	case "Test.Ping":
+		statusMap[ip] = getNow()
+	}
+}
+
+type statusM map[string]int64
+
+var statusMap statusM = make(statusM)
+
+func (statusM) Flush(ip string) {
+	statusMap[ip] = getNow()
+}
+
+func (statusM) Del(ip string) {
+	delete(statusMap, ip)
+}
+
+func (statusM) Add(ip string) bool {
+	_, ok := statusMap[ip]
+	if ok {
+		return false
+	}
+	statusMap.Flush(ip)
+	return true
+}
+
+var Pool sync.Pool
+
+func getBufPool(con net.Conn) *bufio.Reader {
+	buf := Pool.Get()
+	if buf != nil {
+		b := buf.(*bufio.Reader)
+		b.Reset(con)
+		return b
+	}
+	return bufio.NewReader(con)
+}
+
+func putBufPool(b *bufio.Reader) {
+	b.Reset(nil)
+	Pool.Put(b)
+}
+
+var GlobalLock sync.Mutex
+
+func NewID() int64 {
+	GlobalLock.Lock()
+	defer GlobalLock.Unlock()
+	time.Sleep(1e9)
+	return getNow()
+}
+
+func getNow() int64 {
+	return time.Now().Unix()
+}
+
+func decode(b []byte) (*Msg, error) {
+	j := getJsonPool()
+	fmt.Println("开始解析:", string(b))
+	err := json.Unmarshal(b, j)
+	if err != nil {
+		return nil, err
+	}
+	return j, nil
+}
+
+func encode(msg *Msg) ([]byte, error) {
+	return json.Marshal(*msg)
+}
+
+var JsonPool sync.Pool
+
+func getJsonPool() *Msg {
+	buf := Pool.Get()
+	if buf != nil {
+		b := buf.(*Msg)
+		return b
+	}
+	return new(Msg)
+}
+
+func putJsonPool(m *Msg) {
+	*m = Msg{}
+	JsonPool.Put(m)
+}
+
+type rwc struct {
+	Conn net.Conn
+	Buf  *bufio.Reader
+}
+
+func (self *rwc) Readline() ([]byte, bool, error) {
+	return self.Buf.ReadLine()
+}
+func (self *rwc) Writeline(b []byte) (int, error) {
+	b = append(b, []byte{13, 10}...)
+	return self.Conn.Write(b)
+}
+func (self *rwc) Close() error {
+	return self.Conn.Close()
+}
+
+var rwcPool sync.Pool
+
+func getrwcPool(con net.Conn) *rwc {
+	buf := rwcPool.Get()
+	if buf != nil {
+		b := buf.(*rwc)
+		b.Buf.Reset(con)
+		b.Conn = con
+		return b
+	}
+	rw := new(rwc)
+	rw.Conn = con
+	rw.Buf = bufio.NewReader(con)
+	return rw
+}
+
+func putrwcPool(b *rwc) {
+	b.Buf.Reset(nil)
+	b.Conn = nil
+	rwcPool.Put(b)
+}

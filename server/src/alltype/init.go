@@ -1,13 +1,14 @@
 package alltype
 
 import (
+	"alltype/agent"
 	"encoding/gob"
 	"log"
 	"os"
 )
 
 var File *os.File
-var AgentMap map[string]AgentInfo = make(map[string]AgentInfo)
+var AgentMap map[string]agent.AgentInfo = make(map[string]agent.AgentInfo)
 
 func init() {
 	var err error

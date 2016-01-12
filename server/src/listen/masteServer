@@ -2,12 +2,10 @@ package listen
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"net"
 	"os"
-	IntToByte "public_tool/intTobyte"
 	ftime "public_tool/time"
 	"sync"
 )
@@ -30,11 +28,20 @@ func ListenServer(IP string) {
 }
 
 func HandleMessage(con net.Conn) {
-	buf := GetReadPool(con)
+	buf := getReadPool(con)
 	defer func(con net.Conn, b *bufio.Reader) {
-		PutReadPool(r)
+		putReadPool(b)
 		con.Close()
 	}(con, buf)
+	for {
+		msg, err := ReadMsg(buf)
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+		fmt.Println(string(msg))
+		io.WriteString(con, "Hello World")
+	}
 }
 
 var bufRead sync.Pool
@@ -47,7 +54,7 @@ func ReadMsg(b *bufio.Reader) ([]byte, error) {
 	return by, nil
 }
 
-func GetReadPool(r io.Reader) *bufio.Reader {
+func getReadPool(r io.Reader) *bufio.Reader {
 	if v := bufRead.Get(); v != nil {
 		br := v.(*bufio.Reader)
 		br.Reset(r)
@@ -56,7 +63,7 @@ func GetReadPool(r io.Reader) *bufio.Reader {
 	return bufio.NewReader(r)
 }
 
-func PutReadPool(br *bufio.Reader) {
+func putReadPool(br *bufio.Reader) {
 	br.Reset(nil)
-	bufioReaderPool.Put(br)
+	bufRead.Put(br)
 }

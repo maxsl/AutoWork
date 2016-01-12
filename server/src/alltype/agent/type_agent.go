@@ -1,4 +1,4 @@
-package alltype
+package agent
 
 import (
 	"crypto/md5"

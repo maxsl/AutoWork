@@ -17,3 +17,7 @@ func LineTime() string {
 	}
 	return ""
 }
+
+func GetNowUnix() int64 {
+	return time.Now().Unix()
+}
