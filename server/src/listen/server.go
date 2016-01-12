@@ -32,11 +32,12 @@ var exitchan chan bool = make(chan bool, 1)
 func Hander(con net.Conn) {
 	defer con.Close()
 	ip := strings.Split(con.RemoteAddr().String(), ":")[0]
-	defer statusMap.Del(ip)
 	if !statusMap.Add(ip) {
 		fmt.Fprint(con, "AlreadyExist\r\n")
 		return
 	}
+	fmt.Fprint(con, "connection ok\r\n")
+	defer statusMap.Del(ip)
 	buf := rwMsg.GetrwcPool(con)
 	defer rwMsg.PutrwcPool(buf)
 	line, _, err := buf.ReadLine()

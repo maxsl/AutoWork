@@ -11,10 +11,10 @@ import (
 	"time"
 )
 
-func main() {
+func smain() {
 	listen.Listen()
 }
-func cmain() {
+func main() {
 	con, err := net.Dial("tcp", cfg.IP)
 	if err != nil {
 		fmt.Println(err)
@@ -23,12 +23,13 @@ func cmain() {
 	defer con.Close()
 	buf := rwMsg.GetrwcPool(con)
 	defer rwMsg.PutrwcPool(buf)
-	fmt.Fprint(buf, "Auth")
 	b, _, err := buf.ReadLine()
+	fmt.Println(string(b))
 	if err != nil || string(b) == "AlreadyExist" {
 		fmt.Println("连接失败.")
 		return
 	}
+	fmt.Fprint(buf, "Auth")
 	go testPing(buf)
 	go handerClientMsg(buf)
 	select {}
@@ -40,7 +41,7 @@ type config struct {
 }
 
 var flushtime int64 = 0
-var cfg config = config{"172.18.80.247:1789", 10}
+var cfg config = config{"127.0.0.1:1789", 10}
 var lock *sync.Mutex = new(sync.Mutex)
 
 func handerClientMsg(buf *rwMsg.Rwc) {
@@ -94,6 +95,11 @@ func reconnection(buf *rwMsg.Rwc) {
 		}
 		break
 	}
+	line, _, err := buf.ReadLine()
+	if err != nil {
+		reconnection(buf)
+	}
+	fmt.Println(string(line))
 	fmt.Fprint(buf, "Auth")
 	buf.Buf.Reset(buf.Conn)
 }
