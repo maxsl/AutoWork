@@ -5,16 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"listen"
+	"log"
 	"net"
 	"public_tool/rwMsg"
 	"sync"
 	"time"
 )
 
-func smain() {
+func main() {
 	listen.Listen()
 }
-func main() {
+func cmain() {
 	con, err := net.Dial("tcp", cfg.IP)
 	if err != nil {
 		fmt.Println(err)
@@ -24,9 +25,9 @@ func main() {
 	buf := rwMsg.GetrwcPool(con)
 	defer rwMsg.PutrwcPool(buf)
 	b, _, err := buf.ReadLine()
-	fmt.Println(string(b))
+	log.Println(string(b))
 	if err != nil || string(b) == "AlreadyExist" {
-		fmt.Println("连接失败.")
+		log.Println("连接失败.")
 		return
 	}
 	fmt.Fprint(buf, "Auth")
@@ -48,12 +49,12 @@ func handerClientMsg(buf *rwMsg.Rwc) {
 	for {
 		line, _, err := buf.ReadLine()
 		if err != nil {
-			fmt.Printf("读取数据失败,错误信息:%s\n", err)
+			log.Printf("读取数据失败,错误信息:%s\n", err)
 			break
 		}
 		msg, err := rwMsg.Decode(line)
 		if err != nil {
-			fmt.Printf("解析数据错误,错误信息:%s\n", err)
+			log.Printf("解析数据错误,错误信息:%s\n", err)
 			continue
 		}
 		handmsg(msg)
@@ -61,7 +62,7 @@ func handerClientMsg(buf *rwMsg.Rwc) {
 	}
 }
 func handmsg(m *server.Msg) {
-	fmt.Println(*m)
+	log.Println(*m)
 }
 func testPing(buf *rwMsg.Rwc) {
 	for {
@@ -81,7 +82,6 @@ func ping(buf *rwMsg.Rwc) {
 	_, err := buf.Write(b)
 	if err != nil {
 		reconnection(buf)
-		fmt.Println("重连成功.")
 	}
 }
 func reconnection(buf *rwMsg.Rwc) {
@@ -89,17 +89,18 @@ func reconnection(buf *rwMsg.Rwc) {
 	for {
 		buf.Conn, err = net.Dial("tcp", cfg.IP)
 		if err != nil {
-			fmt.Println("重连失败.")
+			log.Println("重连失败.")
 			time.Sleep(1e9)
 			continue
 		}
 		break
 	}
+	buf.Buf.Reset(buf.Conn)
 	line, _, err := buf.ReadLine()
 	if err != nil {
 		reconnection(buf)
+		return
 	}
-	fmt.Println(string(line))
+	log.Println(string(line))
 	fmt.Fprint(buf, "Auth")
-	buf.Buf.Reset(buf.Conn)
 }

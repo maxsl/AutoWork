@@ -3,6 +3,7 @@ package listen
 import (
 	"alltype/server"
 	"fmt"
+	"log"
 	"net"
 	"public_tool/rwMsg"
 	"strings"
@@ -41,7 +42,6 @@ func Hander(con net.Conn) {
 	buf := rwMsg.GetrwcPool(con)
 	defer rwMsg.PutrwcPool(buf)
 	line, _, err := buf.ReadLine()
-	//验证源主机是否授权,规则自己写.
 	if err != nil || string(line) != "Auth" {
 		return
 	}
@@ -54,12 +54,12 @@ func write(buf *rwMsg.Rwc, ip string) {
 		msg := <-statusMap[ip]
 		b, err := handlerMsg(msg, ip)
 		if err != nil {
-			fmt.Printf("主机%s编码消息%s失败,错误信息:%s\n", ip, *msg, err)
+			log.Printf("主机%s编码消息%s失败,错误信息:%s\n", ip, *msg, err)
 			continue
 		}
 		_, err = buf.Write(b)
 		if err != nil {
-			fmt.Printf("往%s发送消息%s是被,错误信息:%s\n", ip, *msg, err)
+			log.Printf("往%s发送消息%s是被,错误信息:%s\n", ip, *msg, err)
 			break
 		}
 	}
@@ -69,17 +69,16 @@ func read(buf *rwMsg.Rwc, ip string) {
 	for {
 		line, _, err := buf.ReadLine()
 		if err != nil {
-			fmt.Printf("读取主机%s数据失败,错误信息:%s\n", ip, err)
+			log.Printf("读取主机%s数据失败,错误信息:%s\n", ip, err)
 			break
 		}
 		msg, err := rwMsg.Decode(line)
 		if err != nil {
-			fmt.Printf("解析主机%s返回数据错误,错误信息:%s\n", ip, err)
+			log.Printf("解析主机%s返回数据错误,错误信息:%s\n", ip, err)
 			rwMsg.PutJsonPool(msg)
 			continue
 		}
-		fmt.Printf("接收到%s返回结果:\n", ip)
-		fmt.Println(*msg)
+		log.Printf("接收到%s返回结果:%s\n", fmt.Sprint(*msg))
 		rwMsg.PutJsonPool(msg)
 	}
 	exitchan <- true
@@ -103,13 +102,11 @@ type config struct {
 	DownLoadAddress string
 	ResultAddress   string
 }
-
-var cfg config = config{"http://127.0.0.1:8888/download", "http://127.0.0.1:8888/result"}
-
 type statusM map[string]chan *server.Msg
 
-var empty []byte
 var statusMap statusM = make(statusM)
+var cfg config = config{"http://127.0.0.1:8888/download", "http://127.0.0.1:8888/result"}
+var empty []byte
 
 func (statusM) Del(ip string) {
 	putclientStatusPool(statusMap[ip])
