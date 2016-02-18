@@ -7,17 +7,13 @@ import (
 	"os"
 )
 
-type UpdateResult struct {
-	Path  string   `json:path`
-	Files []string `json:files`
-}
-
 func client() *http.Client {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	return &http.Client{Transport: tr}
 }
+
 func Wget(url, name string) (bool, error) {
 	resp, err := client().Get(url)
 	if err != nil {

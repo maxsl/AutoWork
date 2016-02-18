@@ -1,4 +1,4 @@
-package tools
+package zip
 
 import (
 	"archive/zip"
@@ -10,9 +10,5 @@ func CheckValidZip(path string) bool {
 		return false
 	}
 	z.Close()
-	return true
-}
-
-func CheckMd5(path string) bool {
 	return true
 }

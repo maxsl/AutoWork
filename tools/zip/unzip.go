@@ -1,24 +1,25 @@
-package tools
+package zip
 
 import (
 	"archive/zip"
-	"centerserver/log"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"strings"
 )
 
-func Unzip(filename, dir string, Log *log.Log) error {
+type log interface {
+	PrintfI(formate string, v ...interface{})
+	PrintfE(formate string, v ...interface{})
+}
+
+func Unzip(filename, dir string, Log log) error {
 	if !strings.HasSuffix(dir, "/") {
 		dir = dir + "/"
 	}
-	//fmt.Printf("Info Unzip to %s\n", dir)
 	File, err := zip.OpenReader(filename)
 	if err != nil {
-		//fmt.Printf("Error Open zip faild:\n%s\n", err)
-		return errors.New(fmt.Sprintf("Error Open zip faild:\n%s\n", err))
+		return errors.New("Error Open zip faild: " + err.Error())
 	}
 	defer File.Close()
 	for _, v := range File.File {
@@ -40,18 +41,18 @@ func createFile(v *zip.File, dscDir string) error {
 	if info.IsDir() {
 		err := os.MkdirAll(v.Name, v.Mode())
 		if err != nil {
-			return errors.New(fmt.Sprintf("Error Create direcotry %s faild:\n%s\n", v.Name, err))
+			return errors.New("Error Create direcotry" + v.Name + "faild: " + err.Error())
 		}
 		return nil
 	}
 	srcFile, err := v.Open()
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error Read from zip faild:\n%s\n", err))
+		return errors.New("Error Read from zip faild: " + err.Error())
 	}
 	defer srcFile.Close()
 	newFile, err := os.Create(v.Name)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error Create file faild:\n%s\n", err))
+		return errors.New("Error Create file faild: " + err.Error())
 	}
 	defer newFile.Close()
 	io.Copy(newFile, srcFile)
