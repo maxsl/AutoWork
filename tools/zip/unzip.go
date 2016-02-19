@@ -25,12 +25,16 @@ func Unzip(filename, dir string, Log log) error {
 	for _, v := range File.File {
 		err := createFile(v, dir)
 		if err != nil {
-			Log.PrintfE("unzip file err %v \n", err)
-			continue
+			if Log != nil {
+				Log.PrintfE("unzip file err %v \n", err)
+			}
+			return err
 		}
 		os.Chtimes(v.Name, v.ModTime(), v.ModTime())
 		os.Chmod(v.Name, v.Mode())
-		Log.PrintfI("unzip %s %s\n", filename, v.Name)
+		if Log != nil {
+			Log.PrintfI("unzip %s %s\n", filename, v.Name)
+		}
 	}
 	return nil
 }
