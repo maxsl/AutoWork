@@ -5,12 +5,16 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/AutoWork/tools/encode"
 	"github.com/AutoWork/tools/md5"
 	"github.com/AutoWork/tools/wget"
 	"github.com/AutoWork/tools/zip"
 )
 
 var tmpfileDir string = "tmpfile/"
+var (
+	Encode = encode.GBKtoUTF8()
+)
 
 func Commond(w http.ResponseWriter, r *http.Request) {
 	action := r.FormValue("action")
@@ -31,13 +35,15 @@ func system(w http.ResponseWriter, r *http.Request) {
 		Default(w, 602)
 		return
 	}
-	c := exec.Command(list[0], list[1:]...)
+	cmds := []string{"/C"}
+	cmds = append(cmds, list...)
+	c := exec.Command("cmd", cmds...)
 	buf, err := c.Output()
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-	w.Write(buf)
+	w.Write([]byte(Encode.ConvertString(string(buf))))
 }
 
 func custom(w http.ResponseWriter, r *http.Request) {

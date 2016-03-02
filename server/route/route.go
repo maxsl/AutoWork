@@ -2,6 +2,8 @@ package route
 
 import (
 	"net/http"
+
+	"github.com/AutoWork/server/route/handler"
 )
 
 func Router(w http.ResponseWriter, r *http.Request) {
@@ -11,11 +13,10 @@ func Router(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.URL.Path {
 	case "/":
-		index(w)
+		handler.Index(w)
 	case "/commond":
-		commond(w, r)
+		handler.Commond(w, r)
 	default:
 		http.Error(w, "Page NotFound.", 404)
 	}
-
 }

@@ -1,5 +1,13 @@
 package main
 
 import (
-	"github.com/AutoUpdate/server/route"
+	"net/http"
+
+	"github.com/AutoWork/server/route"
 )
+
+func main() {
+	http.HandleFunc("/", route.Router)
+
+	http.ListenAndServe(":1789", nil)
+}

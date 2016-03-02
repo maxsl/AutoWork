@@ -4,6 +4,6 @@ import (
 	"net/http"
 )
 
-func Index(w http.ResponseWriter, r *http.Request) {
+func Index(w http.ResponseWriter) {
 	w.Write([]byte("Welcome to AutoWork!"))
 }
