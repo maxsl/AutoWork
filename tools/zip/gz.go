@@ -7,10 +7,11 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strings"
 )
 
-func Gzip(filepath, filename string, Log func(format string, v ...interface{}) (int, error)) error {
+func Gzip(filepath, filename string, exclude []string, Log func(format string, v ...interface{}) (int, error)) error {
 	File, err := os.Create(filename)
 	if err != nil {
 		return err
@@ -21,10 +22,12 @@ func Gzip(filepath, filename string, Log func(format string, v ...interface{}) (
 	tw := tar.NewWriter(gw)
 	defer tw.Close()
 
-	return walk(filepath, tw, Log)
+	excludereg := getreg(exclude)
+
+	return walk(filepath, tw, excludereg, Log)
 }
 
-func walk(path string, tw *tar.Writer, Log func(format string, v ...interface{}) (int, error)) error {
+func walk(path string, tw *tar.Writer, excludereg []*regexp.Regexp, Log func(format string, v ...interface{}) (int, error)) error {
 	path = strings.Replace(path, "\\", "/", -1)
 	info, err := ioutil.ReadDir(path)
 	if err != nil {
@@ -36,18 +39,21 @@ func walk(path string, tw *tar.Writer, Log func(format string, v ...interface{})
 	index := strings.Index(path, "/")
 	list := strings.Join(strings.Split(path, "/")[index:], "/")
 	for _, v := range info {
+		if match(v.Name(), excludereg) {
+			continue
+		}
 		if v.IsDir() {
 			head := tar.Header{Name: list + v.Name(), Typeflag: tar.TypeDir, ModTime: v.ModTime()}
 			tw.WriteHeader(&head)
 			if Log != nil {
 				Log("create directory: %s\n", list+v.Name())
 			}
-			walk(path+v.Name(), tw, Log)
+			walk(path+v.Name(), tw, excludereg, Log)
 			continue
 		}
 		F, err := os.Open(path + v.Name())
 		if err != nil {
-			fmt.Println("打开文件%s失败.", err)
+			fmt.Println("open file %s faild.", err)
 			continue
 		}
 		head := tar.Header{Name: list + v.Name(), Size: v.Size(), Mode: int64(v.Mode()), ModTime: v.ModTime()}
@@ -55,7 +61,7 @@ func walk(path string, tw *tar.Writer, Log func(format string, v ...interface{})
 		io.Copy(tw, F)
 		F.Close()
 		if Log != nil {
-			Log("create directory: %s\n", list+v.Name())
+			Log("create file: %s\n", list+v.Name())
 		}
 	}
 	return nil
