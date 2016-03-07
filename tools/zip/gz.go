@@ -3,15 +3,55 @@ package zip
 import (
 	"archive/tar"
 	"compress/gzip"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
 
-func Gzip(filepath, filename string, exclude []string, Log func(format string, v ...interface{}) (int, error)) error {
+func Gzip(source, filename string) error {
+	zipfile, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer zipfile.Close()
+
+	gw := gzip.NewWriter(zipfile)
+	defer gw.Close()
+	tw := tar.NewWriter(gw)
+	defer tw.Close()
+
+	filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		header, err := tar.FileInfoHeader(info, "")
+		if err != nil {
+			return err
+		}
+		header.Name = path
+
+		err = tw.WriteHeader(header)
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		_, err = io.CopyN(tw, file, info.Size())
+		return err
+	})
+	return err
+}
+
+func Gzip_exclude(filepath, filename string, exclude []string, Log func(format string, v ...interface{}) (int, error)) error {
 	File, err := os.Create(filename)
 	if err != nil {
 		return err
@@ -42,9 +82,13 @@ func walk(path string, tw *tar.Writer, excludereg []*regexp.Regexp, Log func(for
 		if match(v.Name(), excludereg) {
 			continue
 		}
+		head, err := tar.FileInfoHeader(v, "")
+		if err != nil {
+			continue
+		}
+		head.Name = list + v.Name()
 		if v.IsDir() {
-			head := tar.Header{Name: list + v.Name(), Typeflag: tar.TypeDir, ModTime: v.ModTime()}
-			tw.WriteHeader(&head)
+			tw.WriteHeader(head)
 			if Log != nil {
 				Log("create directory: %s\n", list+v.Name())
 			}
@@ -53,11 +97,9 @@ func walk(path string, tw *tar.Writer, excludereg []*regexp.Regexp, Log func(for
 		}
 		F, err := os.Open(path + v.Name())
 		if err != nil {
-			fmt.Println("open file %s faild.", err)
 			continue
 		}
-		head := tar.Header{Name: list + v.Name(), Size: v.Size(), Mode: int64(v.Mode()), ModTime: v.ModTime()}
-		tw.WriteHeader(&head)
+		tw.WriteHeader(head)
 		io.Copy(tw, F)
 		F.Close()
 		if Log != nil {
