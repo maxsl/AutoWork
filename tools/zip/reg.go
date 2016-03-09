@@ -35,7 +35,7 @@ func walk(path string, compresser Compress) error {
 		}
 		err = compresser.WriteHead(root, info)
 		if err != nil {
-			return err
+			return nil
 		}
 		F, err := os.Open(fileroot)
 		if err != nil {
