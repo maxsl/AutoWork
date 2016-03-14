@@ -32,11 +32,12 @@ func handler(con listen.NewConnection) {
 				if err == listen.ReceiveMsgError || err == io.EOF {
 					continue
 				}
-				return
+				break
 			}
 			fmt.Println("收到的消息: ", string(buf))
 			msg <- string(buf)
 		}
+		msg <- "exit"
 	}(con, msg)
 	for {
 		buf := <-msg
@@ -46,8 +47,7 @@ func handler(con listen.NewConnection) {
 			if err == listen.SendHeadError {
 				goto ResendMsg
 			}
-			fmt.Println(err)
-			return
+			break
 		}
 	}
 }

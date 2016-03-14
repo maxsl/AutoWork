@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net"
+	"sync"
 	"time"
 )
 
@@ -53,8 +54,28 @@ func (self *newListener) Addr() net.Addr {
 	return self.lis.Addr()
 }
 
-func NewConn(conn net.Conn) *Connection {
+var connctionPool sync.Pool
+
+func getConnection(conn net.Conn) *Connection {
+	c := connctionPool.Get()
+	if c != nil {
+		con, ok := c.(*Connection)
+		if ok {
+			con.con = conn
+			con.buf = bufio.NewReader(conn)
+			return con
+		}
+	}
 	return &Connection{conn, bufio.NewReader(conn)}
+}
+
+func putConnection(conn *Connection) {
+	conn.buf.Reset(nil)
+	connctionPool.Put(conn)
+}
+
+func NewConn(conn net.Conn) *Connection {
+	return getConnection(conn)
 }
 
 type Connection struct {
@@ -113,7 +134,9 @@ func (self *Connection) Write(b []byte) (int, error) {
 }
 
 func (self *Connection) Close() error {
-	return self.con.Close()
+	err := self.con.Close()
+	putConnection(self)
+	return err
 }
 
 func (self *Connection) LocalAddr() net.Addr {
