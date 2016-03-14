@@ -1,0 +1,210 @@
+package main
+
+import (
+	"bufio"
+	"encoding/binary"
+	"fmt"
+	"io"
+	"net"
+	"strings"
+	"sync"
+)
+
+var (
+	empty       []byte
+	reciverChan = make(chan int, 20)
+)
+
+const (
+	headlength int = 5
+)
+
+type ConnectionInfo struct {
+	Writermsg chan string
+	conn      net.Conn
+	Buf       *bufio.Reader
+	IDmap     map[string]int64
+	lock      *sync.RWMutex
+}
+
+func main() {
+	LiestenTCP(":1789", nil)
+}
+
+func (self *ConnectionInfo) Writer(msg []byte) (int, error) {
+	mgslen := len(msg)
+	head := make([]byte, headlength+mgslen+1)
+	binary.PutUvarint(head, uint64(mgslen))
+	copy(head[headlength:], msg)
+	head[mgslen] = '\n'
+
+	self.lock.Lock()
+	defer self.lock.Unlock()
+	return self.conn.Write(head)
+}
+
+func (self *ConnectionInfo) ReaderOnce() ([]byte, error) {
+	head := make([]byte, headlength)
+	_, err := self.Buf.Read(head)
+	if err != nil {
+		return empty, err
+	}
+	bodyLen, _ := binary.Uvarint(head)
+	line, err := self.Buf.ReadSlice('\n')
+	if err != nil {
+		return empty, err
+	}
+	if uint64(len(line)-1) != bodyLen {
+		return empty, io.EOF
+	}
+	return line[:bodyLen], nil
+}
+
+func (self *ConnectionInfo) StillRead() {
+	defer GlobalConnctionInfo.Delete(self.IP())
+	for {
+		msg, err := self.ReaderOnce()
+		if err != nil {
+			if err == io.EOF {
+				continue
+			}
+			break
+		}
+		fmt.Printf("收到的信息: %s\n", string(msg))
+		go self.Writer(msg)
+	}
+}
+
+func (self *ConnectionInfo) Close() error {
+	return self.conn.Close()
+}
+
+func (self *ConnectionInfo) IP() string {
+	return strings.Split(self.conn.RemoteAddr().String(), ":")[0]
+}
+
+var ConnectionInfoPool sync.Pool
+
+func newConnectionInfo(conn net.Conn) *ConnectionInfo {
+	buf := bufio.NewReader(conn)
+	Chan := make(chan string, 10)
+	IDmap := make(map[string]int64)
+	if v := ConnectionInfoPool.Get(); v != nil {
+		br := v.(*ConnectionInfo)
+		br.Writermsg = Chan
+		br.IDmap = IDmap
+		br.conn = conn
+		br.Buf = buf
+		return br
+	}
+	return &ConnectionInfo{Chan, conn, buf, IDmap, new(sync.RWMutex)}
+}
+
+func putnewConnectionInfo(br *ConnectionInfo) {
+	br.conn = nil
+	br.Buf = nil
+	br.Writermsg = nil
+	br.IDmap = nil
+	ConnectionInfoPool.Put(br)
+}
+
+type ConnectionInfoMap struct {
+	ConnInfoMap map[string]*ConnectionInfo
+	NotRunning  map[string]*ConnectionInfo
+	lock        *sync.RWMutex
+}
+
+func (self *ConnectionInfoMap) IsExist(id string) bool {
+	self.lock.RLock()
+	defer self.lock.RUnlock()
+
+	_, ok := self.ConnInfoMap[id]
+	return ok
+}
+
+func (self *ConnectionInfoMap) Put(id string, info *ConnectionInfo) {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+
+	self.ConnInfoMap[id] = info
+}
+
+func (self *ConnectionInfoMap) Delete(id string) {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+
+	delete(self.ConnInfoMap, id)
+}
+
+func (self *ConnectionInfoMap) Get(id string) *ConnectionInfo {
+	self.lock.RLock()
+	defer self.lock.RUnlock()
+
+	return self.ConnInfoMap[id]
+}
+
+var GlobalConnctionInfo *ConnectionInfoMap = &ConnectionInfoMap{make(map[string]*ConnectionInfo),
+	make(map[string]*ConnectionInfo), new(sync.RWMutex)}
+
+func LiestenTCP(laddr string, registerFunc func(con net.Conn)) error {
+	lis, err := net.Listen("tcp", laddr)
+	if err != nil {
+		return err
+	}
+	if registerFunc == nil {
+		registerFunc = DefalutRegisterConn
+	}
+	go func() {
+		for {
+			<-reciverChan
+			fmt.Println(len(GlobalConnctionInfo.ConnInfoMap))
+			for k, v := range GlobalConnctionInfo.NotRunning {
+				delete(GlobalConnctionInfo.NotRunning, k)
+				if GlobalConnctionInfo.IsExist(k) {
+					//log key已存在,未注册成功.
+					continue
+				}
+				GlobalConnctionInfo.Put(k, v)
+				go v.StillRead()
+			}
+		}
+	}()
+	for {
+		con, err := lis.Accept()
+		if err != nil {
+			continue
+		}
+		go registerFunc(con)
+	}
+}
+
+func DefalutRegisterConn(conn net.Conn) {
+	buf := newConnectionInfo(conn)
+
+	authmsg, err := buf.ReaderOnce()
+
+	if err != nil {
+		conn.Close()
+		putnewConnectionInfo(buf)
+		return
+	}
+
+	if !AuthFuncation(authmsg) {
+		conn.Close()
+		putnewConnectionInfo(buf)
+		return
+	}
+	id := buf.IP()
+	if GlobalConnctionInfo.IsExist(id) {
+		conn.Close()
+		putnewConnectionInfo(buf)
+		return
+	}
+
+	GlobalConnctionInfo.NotRunning[id] = buf
+	reciverChan <- 1
+}
+
+func AuthFuncation(msg []byte) bool {
+	return true
+}
