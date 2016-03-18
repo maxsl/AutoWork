@@ -74,7 +74,7 @@ func putConnection(conn *Connection) {
 	connctionPool.Put(conn)
 }
 
-func NewConn(conn net.Conn) *Connection {
+func NewConn(conn net.Conn) NewConnection {
 	return getConnection(conn)
 }
 
@@ -111,7 +111,7 @@ func (self *Connection) DelimWrite(b []byte) (n int, err error) {
 	head := make([]byte, headlen)
 	binary.PutUvarint(head, msglen)
 	n, err = self.con.Write(head)
-	if n != headlen {
+	if n != headlen || err != nil {
 		if err != nil {
 			return 0, err
 		}
