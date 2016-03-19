@@ -23,14 +23,7 @@ func GetJobID(action string) string {
 	return id
 }
 
-const (
-	JobStatusUnsend = iota
-	JobStatusSendOK
-	JobStatusStartRun
-	JobStatusFinishRun
-)
-
-var Base64Encode *base64.Encoding = base64.RawStdEncoding
+var base64Encode *base64.Encoding = base64.RawStdEncoding
 
 type Job struct {
 	lock   *sync.RWMutex
@@ -38,7 +31,6 @@ type Job struct {
 	Action string
 	User   string
 	Body   string
-	Status int
 }
 
 func (self *Job) Id() string {
@@ -55,17 +47,18 @@ func (self *Job) Base64EncodeString() string {
 	if err != nil {
 		return ""
 	}
-	return Base64Encode.EncodeToString(buf)
+	return base64Encode.EncodeToString(buf)
 }
 
-func (self *Job) SetStatus(code int) bool {
-	if code == JobStatusUnsend || code == JobStatusSendOK || code == JobStatusStartRun || code == JobStatusFinishRun {
-		self.lock.Lock()
-		defer self.lock.Unlock()
-		self.Status = code
-		return true
+func (self *Job) String() string {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+
+	buf, err := json.Marshal(*self)
+	if err != nil {
+		return ""
 	}
-	return false
+	return string(buf)
 }
 
 func (self *Job) Close() {
@@ -84,12 +77,10 @@ func getNewJob(action, user, body string) *Job {
 			j.Action = action
 			j.User = user
 			j.Body = body
-			j.Status = 0
 			return j
 		}
 	}
-	return &Job{lock: new(sync.RWMutex), JobID: GetJobID(action), Action: action, User: user,
-		Body: body, Status: 0}
+	return &Job{lock: new(sync.RWMutex), JobID: GetJobID(action), Action: action, User: user, Body: body}
 }
 
 func putNewJob(job *Job) {
