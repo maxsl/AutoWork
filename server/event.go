@@ -40,7 +40,8 @@ func StartServer() error {
 
 	for {
 		event := GetEvent()
-		fmt.Println("收到消息:", event.Action.String())
+		//		fmt.Println("收到消息:", event.Action.String())
+		//		fmt.Println(tcp_listen.Clients.Client)
 		go func(e *Event) {
 			msg := []byte(e.Action.Base64EncodeString())
 			var unsend []string
@@ -62,16 +63,15 @@ func StartServer() error {
 						return
 					}
 					buf, err := con.DelimRead()
-					if err != nil {
+					if err != nil || string(buf) != "ok" {
 						unsend = append(unsend, ip)
 						tcp_listen.Clients.Close(con)
 						return
 					}
-					fmt.Println(string(buf))
 				}(con, wait)
 			}
 			wait.Wait()
-			fmt.Println("未发送: ", unsend)
+			//			fmt.Println("未发送: ", unsend)
 		}(event)
 	}
 }

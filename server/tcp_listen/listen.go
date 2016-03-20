@@ -39,6 +39,7 @@ func (self *ClientMap) Get(ip string) NewConnection {
 func (self *ClientMap) Put(con NewConnection) bool {
 	ip := strings.Split(con.RemoteAddr().String(), ":")[0]
 	if self.IsExist(ip) {
+		self.Close(con)
 		return false
 	}
 	authMsg, err := con.DelimRead()
