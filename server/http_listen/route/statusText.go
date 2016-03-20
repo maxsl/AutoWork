@@ -1,4 +1,4 @@
-package handler
+package route
 
 const (
 	StatusDefaultError  = 1

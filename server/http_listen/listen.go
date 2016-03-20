@@ -3,12 +3,11 @@ package http_listen
 import (
 	"net/http"
 
-	"github.com/AutoWork/server/http_listen/route/handler"
+	"github.com/AutoWork/server/http_listen/route"
 )
 
 func RunHttpServer(ip string) {
-	http.HandleFunc("/receive", handler.Receive)
-	http.HandleFunc("/run", handler.Run)
+	http.HandleFunc("/", route.Router)
 	err := http.ListenAndServe(ip, nil)
 	if err != nil {
 		println(err.Error())

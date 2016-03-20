@@ -1,4 +1,4 @@
-package handler
+package route
 
 import (
 	"encoding/json"
@@ -7,13 +7,6 @@ import (
 
 	"github.com/AutoWork/server"
 )
-
-type clientMsg struct {
-	User       string   `json:user`
-	Action     string   `json:action`
-	Body       string   `json:body`
-	ServerList []string `json:serverlist`
-}
 
 func Run(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
