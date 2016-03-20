@@ -2,6 +2,7 @@ package tcp_listen
 
 import (
 	"encoding/base64"
+	"strings"
 	"sync"
 )
 
@@ -29,9 +30,14 @@ func (self *ClientMap) IsExist(ip string) bool {
 	}
 	return false
 }
+func (self *ClientMap) Get(ip string) NewConnection {
+	self.lock.RLock()
+	defer self.lock.RUnlock()
+	return self.Client[ip]
 
+}
 func (self *ClientMap) Put(con NewConnection) bool {
-	ip := con.RemoteAddr().String()
+	ip := strings.Split(con.RemoteAddr().String(), ":")[0]
 	if self.IsExist(ip) {
 		return false
 	}
@@ -65,9 +71,10 @@ func (self *ClientMap) GetClients() map[string]NewConnection {
 }
 
 func (self *ClientMap) Close(con NewConnection) error {
+	ip := strings.Split(con.RemoteAddr().String(), ":")[0]
 	self.lock.Lock()
 	defer self.lock.Unlock()
-	delete(self.Client, con.RemoteAddr().String())
+	delete(self.Client, ip)
 	return con.Close()
 }
 

@@ -8,21 +8,21 @@ import (
 )
 
 const (
-	Wait = iota
-	Run
-	Finish
+	JobWait = iota
+	JobRun
+	JobFinish
 )
 
 type JobResult struct {
-	JobID  string
-	Action string
-	User   string
-	Result string
-	Tag    string
-	Status int
+	JobID  string `json:jobid`
+	Action string `json:action`
+	User   string `json:user`
+	Result string `json:result`
+	Tag    string `json:tag`
+	Status int    `json:status`
 }
 
-func receive(w http.ResponseWriter, r *http.Response) {
+func Receive(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	buf, err := ioutil.ReadAll(r.Body)
 	if err != nil {

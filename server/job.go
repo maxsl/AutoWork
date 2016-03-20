@@ -27,10 +27,10 @@ var base64Encode *base64.Encoding = base64.RawStdEncoding
 
 type Job struct {
 	lock   *sync.RWMutex
-	JobID  string
-	Action string
-	User   string
-	Body   string
+	JobID  string `json:jobid`
+	Action string `json:action`
+	User   string `user`
+	Body   string `body`
 }
 
 func (self *Job) Id() string {
@@ -88,6 +88,13 @@ func putNewJob(job *Job) {
 	jobPool.Put(job)
 }
 
-func CreateJob(action, user, body string) *Job {
-	return getNewJob(action, user, body)
+type ClientMsg struct {
+	User       string   `json:user`
+	Action     string   `json:action`
+	Body       string   `json:body`
+	ServerList []string `json:serverlist`
+}
+
+func CreateJob(msg *ClientMsg) *Job {
+	return getNewJob(msg.User, msg.Action, msg.Body)
 }
