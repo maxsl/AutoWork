@@ -8,28 +8,28 @@ import (
 	"github.com/AutoWork/server"
 )
 
-func Run(w http.ResponseWriter, r *http.Request) {
+func run(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	buf, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.Write([]byte(err.Error()))
+		http.Error(w, StatusText(StatusReadBodyError), StatusReadBodyError)
 		return
 	}
 	var msg server.ClientMsg
 	err = json.Unmarshal(buf, &msg)
 	if err != nil {
-		w.Write([]byte(err.Error()))
+		http.Error(w, StatusText(StatusUnmarshalError), StatusUnmarshalError)
 		return
 	}
 	if !checkmsg(&msg) {
-		w.Write(buf)
+		http.Error(w, StatusText(StatusPostArgsError), StatusPostArgsError)
 		return
 	}
 	job := server.CreateJob(&msg)
 	var event *server.Event = &server.Event{job, msg.ServerList}
-	go event.Put()
-	w.Write([]byte("ok"))
+	event.Put()
 }
+
 func checkmsg(msg *server.ClientMsg) bool {
 	if msg.Action == "" || msg.Body == "" || len(msg.ServerList) == 0 || msg.Action == "" {
 		return false

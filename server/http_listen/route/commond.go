@@ -16,7 +16,7 @@ var (
 	Encode = encode.GBKtoUTF8()
 )
 
-func Commond(w http.ResponseWriter, r *http.Request) {
+func commond(w http.ResponseWriter, r *http.Request) {
 	action := r.FormValue("action")
 	switch action {
 	case "custom":

@@ -11,13 +11,13 @@ func Router(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.URL.Path {
 	case "/":
-		Index(w)
+		index(w)
 	case "/receive":
-		Receive(w, r)
+		receive(w, r)
 	case "/run":
-		Run(w, r)
+		run(w, r)
 	case "/commond":
-		Commond(w, r)
+		commond(w, r)
 	default:
 		http.Error(w, "Page NotFound.", http.StatusNotFound)
 	}

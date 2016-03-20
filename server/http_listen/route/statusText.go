@@ -1,19 +1,19 @@
 package route
 
 const (
-	StatusDefaultError  = 1
-	StatusAuthFaild     = 600
-	StatusUnknowAction  = 601
-	StatusPostArgsError = 602
-	StatusNotValidFile  = 603
+	StatusDefaultError   = 1
+	StatusAuthFaild      = 600
+	StatusReadBodyError  = 601
+	StatusPostArgsError  = 602
+	StatusUnmarshalError = 603
 )
 
 var statusText = map[int]string{
-	StatusDefaultError:  "Unknow Error",
-	StatusAuthFaild:     "Authentication Failed!",
-	StatusUnknowAction:  "Unknow Action",
-	StatusPostArgsError: "Post Args Error",
-	StatusNotValidFile:  "Not Is A Valid Zip File",
+	StatusDefaultError:   "Unknow Error",
+	StatusAuthFaild:      "Authentication Failed!",
+	StatusReadBodyError:  "Read Body Error",
+	StatusPostArgsError:  "Post Args Error",
+	StatusUnmarshalError: "Msg Unmarshal Error",
 }
 
 func StatusText(code int) string {
