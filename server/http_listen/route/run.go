@@ -26,7 +26,7 @@ func run(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	job := server.CreateJob(&msg)
-	var event *server.Event = &server.Event{job, msg.ServerList}
+	var event *server.Event = &server.Event{Action: job, Remote: msg.ServerList}
 	event.Put()
 }
 

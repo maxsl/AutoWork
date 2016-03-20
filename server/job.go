@@ -96,5 +96,5 @@ type ClientMsg struct {
 }
 
 func CreateJob(msg *ClientMsg) *Job {
-	return getNewJob(msg.User, msg.Action, msg.Body)
+	return getNewJob(msg.Action, msg.User, msg.Body)
 }

@@ -12,6 +12,7 @@ import (
 type Event struct {
 	Action *Job
 	Remote []string
+	Faild  []string
 }
 
 func (self *Event) Put() {
@@ -40,38 +41,50 @@ func StartServer() error {
 
 	for {
 		event := GetEvent()
-		//		fmt.Println("收到消息:", event.Action.String())
+		fmt.Println("收到消息:", event.Action.String())
 		//		fmt.Println(tcp_listen.Clients.Client)
 		go func(e *Event) {
-			msg := []byte(e.Action.Base64EncodeString())
-			var unsend []string
-			var wait *sync.WaitGroup = new(sync.WaitGroup)
-			for _, v := range e.Remote {
-				con := tcp_listen.Clients.Get(v)
-				if con == nil {
-					unsend = append(unsend, v)
-					continue
-				}
-				wait.Add(1)
-				go func(con tcp_listen.NewConnection, wait *sync.WaitGroup) {
-					defer wait.Done()
-					ip := strings.Split(con.RemoteAddr().String(), ":")[0]
-					_, err := con.DelimWrite(msg)
-					if err != nil {
-						unsend = append(unsend, ip)
-						tcp_listen.Clients.Close(con)
-						return
-					}
-					buf, err := con.DelimRead()
-					if err != nil || string(buf) != "ok" {
-						unsend = append(unsend, ip)
-						tcp_listen.Clients.Close(con)
-						return
-					}
-				}(con, wait)
+			unsend := sendMgs(e)
+			if len(unsend) > 0 {
+				//	第二次发送没有发送成功的消息.
+				unsend = sendMgs(&Event{Action: e.Action, Remote: unsend})
 			}
-			wait.Wait()
-			//			fmt.Println("未发送: ", unsend)
+			e.Faild = unsend
+			if len(e.Faild) != 0 {
+				fmt.Println("未发送: ", e.Faild)
+			}
 		}(event)
 	}
+}
+
+func sendMgs(e *Event) []string {
+	msg := []byte(e.Action.Base64EncodeString())
+	var unsend []string
+	var wait *sync.WaitGroup = new(sync.WaitGroup)
+	for _, v := range e.Remote {
+		con := tcp_listen.Clients.Get(v)
+		if con == nil {
+			unsend = append(unsend, v)
+			continue
+		}
+		wait.Add(1)
+		go func(con tcp_listen.NewConnection, wait *sync.WaitGroup) {
+			defer wait.Done()
+			ip := strings.Split(con.RemoteAddr().String(), ":")[0]
+			_, err := con.DelimWrite(msg)
+			if err != nil {
+				unsend = append(unsend, ip)
+				tcp_listen.Clients.Close(con)
+				return
+			}
+			buf, err := con.DelimRead()
+			if err != nil || string(buf) != "ok" {
+				unsend = append(unsend, ip)
+				tcp_listen.Clients.Close(con)
+				return
+			}
+		}(con, wait)
+	}
+	wait.Wait()
+	return unsend
 }

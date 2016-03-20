@@ -11,8 +11,6 @@ import (
 	"github.com/AutoWork/server/http_listen"
 )
 
-const bodyType = "application/x-www-form-urlencoded"
-
 func main() {
 	go http_listen.RunHttpServer(":1789")
 	go server.StartServer()
@@ -25,6 +23,8 @@ type clientMsg struct {
 	Body       string   `json:body`
 	ServerList []string `json:serverlist`
 }
+
+const bodyType = "application/x-www-form-urlencoded"
 
 func cmain() {
 	var x clientMsg = clientMsg{User: "root", Action: "cmd",

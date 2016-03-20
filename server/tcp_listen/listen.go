@@ -30,12 +30,13 @@ func (self *ClientMap) IsExist(ip string) bool {
 	}
 	return false
 }
+
 func (self *ClientMap) Get(ip string) NewConnection {
 	self.lock.RLock()
 	defer self.lock.RUnlock()
 	return self.Client[ip]
-
 }
+
 func (self *ClientMap) Put(con NewConnection) bool {
 	ip := strings.Split(con.RemoteAddr().String(), ":")[0]
 	if self.IsExist(ip) {
