@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var jobIDlock *sync.RWMutex = new(sync.RWMutex)
+var jobIDlock sync.RWMutex
 var counter int64 = 0
 
 func GetJobID(action string) string {
@@ -29,8 +29,8 @@ type Job struct {
 	lock   *sync.RWMutex
 	JobID  string `json:jobid`
 	Action string `json:action`
-	User   string `user`
-	Body   string `body`
+	User   string `json:user`
+	Body   string `json:body`
 }
 
 func (self *Job) Id() string {
@@ -92,7 +92,8 @@ type ClientMsg struct {
 	User       string   `json:user`
 	Action     string   `json:action`
 	Body       string   `json:body`
-	ServerList []string `json:serverlist`
+	Tag        string   `json:"tag,omitempty"`
+	ServerList []string `json:"serverlist,omitempty`
 }
 
 func CreateJob(msg *ClientMsg) *Job {

@@ -15,19 +15,21 @@ type Event struct {
 	Faild  []string
 }
 
-func (self *Event) Put() {
-	receive <- self
-}
-
 const eventChanLen = 50
 
 var receive chan *Event = make(chan *Event, eventChanLen)
 
+func (self *Event) Put() {
+	receive <- self
+}
+
+func (self *Event) String() string {
+	return fmt.Sprintf("{{%s %s %s %s} %s %s", self.Action.JobID, self.Action.Action,
+		self.Action.User, self.Action.Body, self.Remote, self.Remote)
+}
+
 func GetEventChanLen() int {
 	return len(receive)
-}
-func GetEvent() *Event {
-	return <-receive
 }
 
 func StartServer() error {
@@ -40,10 +42,10 @@ func StartServer() error {
 	}()
 
 	for {
-		event := GetEvent()
+		event := <-receive
 		fmt.Println("收到消息:", event.Action.String())
-		//		fmt.Println(tcp_listen.Clients.Client)
 		go func(e *Event) {
+			defer e.Action.Close()
 			unsend := sendMgs(e)
 			if len(unsend) > 0 {
 				//	第二次发送没有发送成功的消息.
@@ -53,6 +55,7 @@ func StartServer() error {
 			if len(e.Faild) != 0 {
 				fmt.Println("未发送: ", e.Faild)
 			}
+			//时间记录到数据库.
 		}(event)
 	}
 }

@@ -28,10 +28,12 @@ func walk(path string, compresser Compress) error {
 		if err != nil {
 			return err
 		}
-		root = strings.Replace(root, "\\", "/", -1)
+		root = filepath.ToSlash(root)
 		fileroot := root
 		if root = strings.TrimPrefix(root, path); root == "" {
 			root = baseDir
+		} else {
+			root = baseDir + root
 		}
 		err = compresser.WriteHead(root, info)
 		if err != nil {
@@ -47,30 +49,3 @@ func walk(path string, compresser Compress) error {
 	})
 	return nil
 }
-
-/*
-func match(str string, regexpstr []*regexp.Regexp) bool {
-	for _, v := range regexpstr {
-		if !v.Match([]byte(str)) {
-			continue
-		}
-		return true
-	}
-	return false
-}
-
-func getreg(regexpstr []string) []*regexp.Regexp {
-	list := make([]*regexp.Regexp, 0, len(regexpstr))
-	for _, v := range regexpstr {
-		if !strings.HasPrefix(v, "^") {
-			v = "^" + v
-		}
-		reg, err := regexp.Compile(v)
-		if err != nil {
-			continue
-		}
-		list = append(list, reg)
-	}
-	return list
-}
-*/

@@ -2,6 +2,7 @@ package zip
 
 import (
 	"archive/zip"
+	"fmt"
 	"io"
 	"os"
 	"time"
@@ -38,6 +39,7 @@ func (self *ZipWrite) WriteHead(path string, info os.FileInfo) error {
 	if info.IsDir() {
 		head.Name += "/"
 	}
+	fmt.Println(head.Name)
 	head.SetModTime(time.Unix(info.ModTime().Unix()+self.zone*60*60, 0))
 	write, err := self.zw.CreateHeader(head)
 	if err != nil {
@@ -54,47 +56,3 @@ func (self *ZipWrite) Write(p []byte) (int, error) {
 func (self *ZipWrite) Walk(source string) error {
 	return walk(source, self)
 }
-
-/*
-const zone int64 = +8
-
-func Zip(source, target string) error {
-	zipfile, err := os.Create(target)
-	if err != nil {
-		return err
-	}
-	defer zipfile.Close()
-
-	archive := zip.NewWriter(zipfile)
-	defer archive.Close()
-
-	return filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		header, err := zip.FileInfoHeader(info)
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() {
-			header.Method = zip.Deflate
-		}
-		header.SetModTime(time.Unix(info.ModTime().Unix()+(zone*60*60), 0))
-		header.Name = path
-		writer, err := archive.CreateHeader(header)
-		if err != nil {
-			return err
-		}
-		if info.IsDir() {
-			return nil
-		}
-		file, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-		_, err = io.Copy(writer, file)
-		return err
-	})
-}
-*/
