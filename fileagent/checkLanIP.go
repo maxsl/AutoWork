@@ -1,5 +1,5 @@
 //安全起见,设置允许的网段,只允许内网.
-package client
+package fileagent
 
 import "net"
 

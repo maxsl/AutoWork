@@ -1,4 +1,4 @@
-package client
+package fileagent
 
 const (
 	zone     int64 = +8

@@ -5,10 +5,10 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/AutoWork/tools/encode"
-	"github.com/AutoWork/tools/md5"
-	"github.com/AutoWork/tools/wget"
-	"github.com/AutoWork/tools/zip"
+	"github.com/czxichen/AutoWork/tools/encode"
+	"github.com/czxichen/AutoWork/tools/md5"
+	"github.com/czxichen/AutoWork/tools/wget"
+	"github.com/czxichen/AutoWork/tools/zip"
 )
 
 var tmpfileDir string = "tmpfile/"

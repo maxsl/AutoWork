@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/AutoWork/server/tcp_listen"
+	"github.com/czxichen/AutoWork/server/tcp_listen"
 )
 
 type Event struct {
