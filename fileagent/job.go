@@ -1,7 +1,6 @@
 package fileagent
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -22,6 +21,7 @@ func (self *Job) Init() {
 		self.Path = self.Path + "/"
 	}
 }
+
 func (self *Job) GetFilesInfo() *FilesInfo {
 	self.Init()
 	var Files *FilesInfo = &FilesInfo{Path: self.Path, JobId: self.JobId, Tag: self.Tag}
@@ -30,10 +30,7 @@ func (self *Job) GetFilesInfo() *FilesInfo {
 		if filepath.IsAbs(file) {
 			info, err := os.Stat(file)
 			if err != nil {
-				fmt.Println(err)
-				if debug {
-					currentLine(err)
-				}
+				Log.Printf("GetFilesInfo Error: %v\n", err)
 				continue
 			}
 			Files.Size += info.Size()
@@ -42,9 +39,7 @@ func (self *Job) GetFilesInfo() *FilesInfo {
 		}
 		info, err := os.Stat(self.Path + file)
 		if err != nil {
-			if debug {
-				currentLine(err)
-			}
+			Log.Printf("GetFilesInfo Error: %v\n", err)
 			continue
 		}
 		if info.IsDir() {
@@ -56,9 +51,9 @@ func (self *Job) GetFilesInfo() *FilesInfo {
 	return Files
 }
 
+//返回一个map,用来响应客户端请求查看的Tag
 func (self *Job) PrintFiles() map[string][]string {
 	self.Init()
-	fmt.Println(self.Path)
 	var m map[string][]string = make(map[string][]string)
 	for _, v := range self.Name {
 		var list []string
@@ -66,9 +61,7 @@ func (self *Job) PrintFiles() map[string][]string {
 		if filepath.IsAbs(v) {
 			_, err := os.Stat(v)
 			if err != nil {
-				if debug {
-					currentLine(err)
-				}
+				Log.Printf("PrintFiles Error: %v\n", err)
 				continue
 			}
 			m[v] = append(list, v)
@@ -77,9 +70,7 @@ func (self *Job) PrintFiles() map[string][]string {
 		path := self.Path + v
 		info, err := os.Stat(path)
 		if err != nil {
-			if debug {
-				currentLine(err)
-			}
+			Log.Printf("PrintFiles Error: %v\n", err)
 			continue
 		}
 		if !info.IsDir() {
@@ -89,9 +80,7 @@ func (self *Job) PrintFiles() map[string][]string {
 		}
 		l, err := ioutil.ReadDir(path)
 		if err != nil {
-			if debug {
-				currentLine(err)
-			}
+			Log.Printf("PrintFiles Error: %v\n", err)
 			continue
 		}
 		for _, name := range l {

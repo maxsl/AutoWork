@@ -49,8 +49,8 @@ func (self *FilesInfo) copy() []string {
 			}
 			list = append(list, homeDir+path)
 			err = copyFile(file, homeDir+path)
-			if err != nil && debug {
-				currentLine(err)
+			if err != nil {
+				Log.Printf("Copy Error: %v\n", err)
 			}
 			continue
 		}
@@ -62,8 +62,8 @@ func (self *FilesInfo) copy() []string {
 		}
 		list = append(list, homeDir+file)
 		err = copyFile(self.Path+file, homeDir+file)
-		if err != nil && debug {
-			currentLine(err)
+		if err != nil {
+			Log.Printf("Copy Error: %v\n", err)
 		}
 		continue
 	}
@@ -73,16 +73,16 @@ func (self *FilesInfo) copy() []string {
 func (self *FilesInfo) zip() (string, string) {
 	dir := tempDir + "/" + self.JobId
 	File, err := os.Create(tempDir + "/" + self.JobId + ".zip")
-	if err != nil && debug {
-		currentLine(err)
+	if err != nil {
+		Log.Printf("Zip Error: %v\n", err)
 		return dir, ""
 	}
 	defer File.Close()
 	z := zip.NewZipWriter(File)
 	defer z.Close()
 	err = z.Walk(dir)
-	if err != nil && debug {
-		currentLine(err)
+	if err != nil {
+		Log.Printf("Zip Error: %v\n", err)
 	}
 	return dir, dir + ".zip"
 }
