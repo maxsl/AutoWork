@@ -2,7 +2,6 @@ package zip
 
 import (
 	"archive/zip"
-	"fmt"
 	"io"
 	"os"
 	"time"
@@ -39,7 +38,6 @@ func (self *ZipWrite) WriteHead(path string, info os.FileInfo) error {
 	if info.IsDir() {
 		head.Name += "/"
 	}
-	fmt.Println(head.Name)
 	head.SetModTime(time.Unix(info.ModTime().Unix()+self.zone*60*60, 0))
 	write, err := self.zw.CreateHeader(head)
 	if err != nil {
