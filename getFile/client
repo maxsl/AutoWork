@@ -1,0 +1,179 @@
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"flag"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"strings"
+)
+
+const (
+	bodyType = "application/json"
+)
+
+type job struct {
+	FullDir bool
+	Files   string
+	Date    int
+	Reg     string
+	IPlist  string
+	Port    string
+	Host    string
+}
+
+type Job struct {
+	Tag    int      `json:tag`
+	Files  []string `json:files`
+	Date   int      `json:date`
+	Regexp string   `json:regexp`
+}
+
+type SourceJob struct {
+	Job    Job
+	IPlist []string `json:iplist`
+}
+
+type Exec struct {
+	JobId    string   `json:jobid`
+	Size     int64    `json:size`
+	Files    []string `json:files`
+	AbsFiles []string `json:absfiles`
+}
+
+var (
+	cfg string
+	j   job
+	SJ  SourceJob
+)
+
+func init() {
+	flag.StringVar(&cfg, "c", "", "-c cfg.json")
+	flag.BoolVar(&j.FullDir, "d", false, "-d true")
+	flag.StringVar(&j.Files, "f", "", "-f 1,D:/test/2,test/3")
+	flag.IntVar(&j.Date, "t", 0, "-t -1 or -t 1")
+	flag.StringVar(&j.Reg, "r", "", "-r *.go")
+	flag.StringVar(&j.IPlist, "i", "", "-i 172.18.80.247:1789,127.0.0.1:1789")
+	flag.StringVar(&j.Port, "p", "", "-p 1789")
+	flag.StringVar(&j.Host, "h", "", "-h 182.168.1.2:1789")
+	flag.Parse()
+
+	if len(cfg) > 0 {
+		readConfig(cfg, &j)
+	}
+
+	if len(j.Files) <= 0 || len(j.IPlist) <= 0 || len(j.Host) <= 0 {
+		fmt.Printf("%s -f -h or -i is null\n", os.Args[0])
+		os.Exit(1)
+	}
+
+	if j.FullDir {
+		if j.Date != 0 || len(j.Reg) != 0 {
+			SJ.Job.Tag = 4
+		} else {
+			SJ.Job.Tag = 2
+		}
+	} else {
+		if j.Date != 0 || len(j.Reg) != 0 {
+			SJ.Job.Tag = 3
+		} else {
+			SJ.Job.Tag = 1
+		}
+	}
+	SJ.Job.Date = j.Date
+	SJ.Job.Regexp = j.Reg
+	SJ.Job.Files = strings.Split(j.Files, ",")
+	SJ.IPlist = resolveIP(j.IPlist, j.Port)
+}
+
+func main() {
+	buf, err := json.Marshal(SJ)
+	if err != nil {
+		fmt.Printf("Marshal msg faild,%v\n", err)
+		return
+	}
+	rio := bytes.NewReader(buf)
+	resp, err := http.Post(fmt.Sprintf("http://%v/getFile/index", j.Host), bodyType, rio)
+	if err != nil {
+		fmt.Printf("Request faild,%v\n", err)
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		fmt.Println(resp.StatusCode)
+		return
+	}
+	buf, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("Read resp msg faild,%v\n", err)
+		return
+	}
+	m := make(map[string]Exec)
+	err = json.Unmarshal(buf, &m)
+	if err != nil {
+		fmt.Printf("Unmarshal resp msg faild,%v\n", err)
+		return
+	}
+	if len(m) > 0 {
+		for k, v := range m {
+			fmt.Printf("agent:%v\tFind AllFiles Size:%v\n", k, v.Size)
+			fmt.Printf("Find Files:%v\n", v.Files)
+			fmt.Printf("Find AbsFiles%v\n", v.AbsFiles)
+		}
+	} else {
+		fmt.Println("Can't found valied file.")
+		return
+	}
+	var enter string
+	for {
+		fmt.Print("Input 'Y' continue or 'N' exit:")
+		fmt.Scan(&enter)
+		switch {
+		case strings.Contains("Y,y", enter):
+			rio = bytes.NewReader(buf)
+			resp, err = http.Post(fmt.Sprintf("http://%v/getFile/run", j.Host), bodyType, rio)
+			if err != nil {
+				fmt.Println("Commit compress faild,%v\n", err)
+				return
+			}
+			if resp.StatusCode != 200 {
+				fmt.Println("Resp stausCode:%v\n", resp.StatusCode)
+			}
+			return
+		case strings.Contains("N,n", enter):
+			return
+		default:
+			continue
+		}
+	}
+}
+
+func resolveIP(ip, port string) []string {
+	iplist := strings.Split(ip, ",")
+	if len(port) <= 0 {
+		return iplist
+	}
+	for index, value := range iplist {
+		if strings.Contains(value, ":") {
+			continue
+		}
+		iplist[index] = value + ":" + port
+	}
+	return iplist
+}
+
+func readConfig(cfgPath string, cfg *job) {
+	buf, err := ioutil.ReadFile(cfgPath)
+	if err != nil {
+		fmt.Printf("Read config file faild,%v\n", err)
+		os.Exit(1)
+	}
+	err = json.Unmarshal(buf, cfg)
+	if err != nil {
+		fmt.Printf("Unmarshal config file faild,%s\n", err)
+		os.Exit(1)
+	}
+}
