@@ -1,0 +1,7 @@
+{"ListenIP":"0.0.0.0:2789",
+"Relationship":"relationship.txt",
+"Debug":true,
+"Log":"center.log",
+"WhiteList":"172.18.80.247,127.0.0.1",
+"TmpDir":"tmp"
+} 

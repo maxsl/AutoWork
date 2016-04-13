@@ -16,7 +16,7 @@ func Init() {
 		err = json.Unmarshal(buf, &config)
 	}
 	if err != nil {
-		println("init config faild,use default config.")
+		println("init config faild", err.Error(), "use default config.")
 	}
 	config.TmpDir = strings.Replace(config.TmpDir, `\`, "/", -1)
 	if !strings.HasSuffix(config.TmpDir, "/") {

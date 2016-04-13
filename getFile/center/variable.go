@@ -47,13 +47,13 @@ var (
 	configFile string
 )
 
-var unixTime int64 = time.Now().Unix()
-var lock *sync.RWMutex = new(sync.RWMutex)
-
 func init() {
-	flag.StringVar(&configFile, "-c", "center.json", "-c config-path")
+	flag.StringVar(&configFile, "-c", "center_cfg.json", "-c config-path")
 	flag.Parse()
 }
+
+var unixTime int64 = time.Now().Unix()
+var lock *sync.RWMutex = new(sync.RWMutex)
 
 func getJobId() string {
 	now := time.Now().Unix()
