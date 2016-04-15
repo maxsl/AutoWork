@@ -1,3 +1,4 @@
+
 package main
 
 import (
@@ -23,6 +24,8 @@ type job struct {
 	IPlist  string
 	Port    string
 	Host    string
+	Mode    string
+	Contact string
 }
 
 type Job struct {
@@ -48,6 +51,7 @@ var (
 	cfg string
 	j   job
 	SJ  SourceJob
+	id  string
 )
 
 func init() {
@@ -59,6 +63,8 @@ func init() {
 	flag.StringVar(&j.IPlist, "i", "", "-i 172.18.80.247:1789,127.0.0.1:1789")
 	flag.StringVar(&j.Port, "p", "", "-p 1789")
 	flag.StringVar(&j.Host, "h", "", "-h 182.168.1.2:1789")
+	flag.StringVar(&j.Mode, "m", "rtx", "-m rtx or -m email or phone")
+	flag.StringVar(&j.Contact, "-C", "", "-C contact")
 	flag.Parse()
 
 	if len(cfg) > 0 {
@@ -119,6 +125,9 @@ func main() {
 	}
 	if len(m) > 0 {
 		for k, v := range m {
+			if id == "" {
+				id = v.JobId
+			}
 			fmt.Printf("agent:%v\tFind AllFiles Size:%v\n", k, v.Size)
 			fmt.Printf("Find Files:%v\n", v.Files)
 			fmt.Printf("Find AbsFiles%v\n", v.AbsFiles)
@@ -133,6 +142,7 @@ func main() {
 		fmt.Scan(&enter)
 		switch {
 		case strings.Contains("Y,y", enter):
+			http.Get(fmt.Sprintf("http://%v/getFile/contacts?id=%s&mode=%s&cts=%s", j.Host, id, j.Mode, j.Contact))
 			rio = bytes.NewReader(buf)
 			resp, err = http.Post(fmt.Sprintf("http://%v/getFile/run", j.Host), bodyType, rio)
 			if err != nil {

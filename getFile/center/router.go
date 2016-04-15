@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 )
 
 func index(w http.ResponseWriter, r *http.Request) {
@@ -60,6 +61,12 @@ func run(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	request(m)
+	for _, v := range m {
+		if len(v.JobId) > 0 {
+			w.Write([]byte("http://" + r.Host + "/getFile/download?&JobId=" + v.JobId))
+			break
+		}
+	}
 }
 
 func finished(w http.ResponseWriter, r *http.Request) {
@@ -97,6 +104,7 @@ func finished(w http.ResponseWriter, r *http.Request) {
 	}
 	io.Copy(File, resp.Body)
 	File.Close()
+	sendResult(id, r.Host)
 }
 
 func download(w http.ResponseWriter, r *http.Request) {
@@ -130,4 +138,39 @@ func writeIndex(w io.Writer, JobId string, list []string) {
 		w.Write([]byte(str))
 	}
 	w.Write([]byte("</pre></html>"))
+}
+
+type msg struct {
+	mode     string `json:mode`
+	contacts string `json:contacts`
+}
+type sendmsg struct {
+	lock *sync.RWMutex
+	m    map[string]msg
+}
+
+var Contacts *sendmsg = &sendmsg{new(sync.RWMutex), make(map[string]msg)}
+
+func (self *sendmsg) add(id string, m msg) {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+	self.m[id] = m
+}
+func (self *sendmsg) del(id string) (msg, bool) {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+	m, ok := self.m[id]
+	delete(self.m, id)
+	return m, ok
+}
+
+func contacts(w http.ResponseWriter, r *http.Request) {
+	id := r.FormValue("id")
+	mode := r.FormValue("mode")
+	cts := r.FormValue("cts")
+	if len(id) == 0 || len(cts) == 0 {
+		http.Error(w, "Jobid mode or contacts can't empty.", 605)
+		return
+	}
+	Contacts.add(id, msg{mode, cts})
 }

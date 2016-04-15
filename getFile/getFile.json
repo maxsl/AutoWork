@@ -1,0 +1,8 @@
+{"Path":"/tmp",
+"Host":"http://127.0.0.1/getFile/finished",
+"ListenIP":"0.0.0.0",
+"Port":"1789",   
+"Debug":true,
+"TempPath":"tmp/",
+"Log":"getFile.log"
+}

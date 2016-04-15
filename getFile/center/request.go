@@ -8,6 +8,21 @@ import (
 	"sync"
 )
 
+func sendResult(id, ip string) {
+	m, ok := Contacts.del(id)
+	if !ok {
+		return
+	}
+	p := make(map[string][]string)
+	p["action"] = []string{m.mode}
+	p["tos"] = []string{m.contacts}
+	p["content"] = []string{"http://" + ip + "/getFile/download?JobId=" + id}
+	if config.Debug {
+		Log.Println("send result to ", config.MsgApi, p)
+	}
+	http.PostForm(config.MsgApi, p)
+}
+
 func forwardrequst(iplist []string, buf []byte) (m map[string]Exec) {
 	m = make(map[string]Exec)
 	var w *sync.WaitGroup = new(sync.WaitGroup)
@@ -60,7 +75,8 @@ func request(m map[string]Exec) {
 				return
 			}
 			r := bytes.NewReader(buf)
-			resp, err := http.Post("http://"+ip+"/getFile/run", bodyType, r)
+			u := "http://" + ip + "/getFile/run"
+			resp, err := http.Post(u, bodyType, r)
 			if err != nil {
 				Log.Println("send request faild:", err)
 				return
@@ -69,6 +85,10 @@ func request(m map[string]Exec) {
 			if resp.StatusCode != 200 {
 				Log.Printf("%v error code:%v\n", ip, resp.StatusCode)
 				return
+			} else {
+				if config.Debug {
+					Log.Println("Request successful ->", u)
+				}
 			}
 		}(w, ip, msg)
 	}

@@ -16,5 +16,5 @@ var (
 func ipIsLanIP(str string) bool {
 	str = strings.Split(str, ":")[0]
 	ip := net.ParseIP(str)
-	return IP192.Contains(ip) || IP172.Contains(ip) || IP10.Contains(ip)
+	return IP192.Contains(ip) || IP172.Contains(ip) || IP10.Contains(ip) || strings.Contains(config.Whitelist, str)
 }

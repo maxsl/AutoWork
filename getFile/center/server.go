@@ -12,11 +12,12 @@ func Server() {
 }
 
 func route(w http.ResponseWriter, r *http.Request) {
-	Log.Println("RemoteAddr:", r.RemoteAddr, "RequestURI:", r.RequestURI)
 	if !strings.Contains(config.WhiteList, strings.Split(r.RemoteAddr, ":")[0]) {
-		http.NotFound(w, r)
+		Log.Printf("%s Not in white list\n", r.RemoteAddr)
+		http.Error(w, "Not in white list", 403)
 		return
 	}
+	Log.Println("RemoteAddr:", r.RemoteAddr, "RequestURI:", r.RequestURI)
 	switch r.URL.Path {
 	case "/getFile/index":
 		index(w, r)
@@ -26,6 +27,8 @@ func route(w http.ResponseWriter, r *http.Request) {
 		finished(w, r)
 	case "/getFile/download":
 		download(w, r)
+	case "/getFile/contacts":
+		contacts(w, r)
 	default:
 		return
 	}

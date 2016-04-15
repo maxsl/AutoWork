@@ -3,6 +3,7 @@ package getFile
 import (
 	"io"
 	"os"
+	"strings"
 
 	"github.com/czxichen/AutoWork/tools/zip"
 )
@@ -18,7 +19,10 @@ func (self Exec) Copy() (string, error) {
 	for _, path := range self.Files {
 		dir, _ := SplitPath(path)
 		tmp := config.TempPath + self.JobId + "/"
-		os.MkdirAll(tmp+dir, 0644)
+		err := os.MkdirAll(tmp+dir, 0644)
+		if err != nil {
+			Log.Println("create dir", err)
+		}
 		copyFile(config.Path+path, tmp+path)
 	}
 	for _, path := range self.AbsFiles {
@@ -55,11 +59,15 @@ func (self Exec) zip() (string, error) {
 }
 
 func copyFile(src, dst string) error {
+	if strings.HasSuffix(src, "fifo") {
+		return nil
+	}
 	sFile, err := os.Open(src)
 	if err != nil {
 		return err
 	}
 	defer sFile.Close()
+
 	dFile, err := os.Create(dst)
 	if err != nil {
 		return err

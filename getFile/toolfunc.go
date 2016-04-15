@@ -12,13 +12,14 @@ import (
 )
 
 type cfg struct {
-	Path     string `json:path`
-	Host     string `json:host`
-	ListenIP string `json:listenip`
-	Port     string `json:port`
-	Debug    bool   `json:debug`
-	TempPath string `json:temppath`
-	Log      string `json:log`
+	Path      string `json:path`
+	Host      string `json:host`
+	ListenIP  string `json:listenip`
+	Port      string `json:port`
+	Debug     bool   `json:debug`
+	TempPath  string `json:temppath`
+	Log       string `json:log`
+	Whitelist string `json:whitelist`
 }
 
 var (
@@ -35,28 +36,31 @@ var config cfg = cfg{Path: "/tmp",
 
 var Log *log.Logger
 
-func init() {
-	flag.StringVar(&configFile, "c", "config.json", "-c config-file-name")
+func Init() {
+	flag.StringVar(&configFile, "c", "getFile.json", "-c config-file-name")
 	flag.Parse()
 	buf, err := ioutil.ReadFile(configFile)
 	if err == nil {
 		err = json.Unmarshal(buf, &config)
 	}
+	if err != nil {
+		println("Unmarshal faild," + err.Error())
+	}
 	File, err := os.OpenFile(config.Log, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
 	if err != nil {
-		println("usage default out.")
 		Log = log.New(os.Stdout, "", log.LstdFlags)
+		Log.Println("From config file init faild,use default config.")
 	} else {
 		Log = log.New(File, "", log.LstdFlags)
 	}
-	if err != nil {
-		Log.Println("init config faild:", err)
-		Log.Println("usage default:", config)
-	} else {
+	if config.Debug {
 		Log.Println("config:", config)
 	}
 	if !strings.HasSuffix(config.Path, "/") {
 		config.Path += "/"
+	}
+	if !strings.HasSuffix(config.TempPath, "/") {
+		config.TempPath += "/"
 	}
 }
 
@@ -84,10 +88,13 @@ func ErrorCode(code int) string {
 }
 
 func client(j string) (int, error) {
-	resp, err := http.Get(config.Host + "?JobId=" + j + "&" + "Port=" + config.Port)
+	u := config.Host + "?JobId=" + j + "&" + "Port=" + config.Port
+	resp, err := http.Get(u)
 	defer resp.Body.Close()
 	if err != nil {
 		return 0, err
+	} else {
+		Log.Println("Request successful ->", u)
 	}
 	return resp.StatusCode, nil
 }
@@ -105,6 +112,9 @@ func size(path string, l []string) int64 {
 }
 
 func walkDir(path string) ([]string, int64) {
+	if path == "./" {
+		path = ""
+	}
 	path = config.Path + path
 	if !strings.HasSuffix(path, "/") {
 		path += "/"

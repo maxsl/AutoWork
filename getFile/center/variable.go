@@ -14,6 +14,7 @@ type cfg struct {
 	Log          string `json:log`
 	WhiteList    string `json:whitelist`
 	TmpDir       string `json:tmpdir`
+	MsgApi       string `json:msgapi`
 }
 
 type Exec struct {
