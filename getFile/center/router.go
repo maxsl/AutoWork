@@ -104,7 +104,7 @@ func finished(w http.ResponseWriter, r *http.Request) {
 	}
 	io.Copy(File, resp.Body)
 	File.Close()
-	sendResult(id, r.Host)
+	sendResult(id)
 }
 
 func download(w http.ResponseWriter, r *http.Request) {
@@ -143,6 +143,7 @@ func writeIndex(w io.Writer, JobId string, list []string) {
 type msg struct {
 	mode     string `json:mode`
 	contacts string `json:contacts`
+	ip       string `json:ip`
 }
 type sendmsg struct {
 	lock *sync.RWMutex
@@ -172,5 +173,5 @@ func contacts(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Jobid mode or contacts can't empty.", 605)
 		return
 	}
-	Contacts.add(id, msg{mode, cts})
+	Contacts.add(id, msg{mode, cts, r.Host})
 }

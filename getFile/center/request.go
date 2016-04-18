@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-func sendResult(id, ip string) {
+func sendResult(id string) {
 	m, ok := Contacts.del(id)
 	if !ok {
 		return
@@ -16,7 +16,7 @@ func sendResult(id, ip string) {
 	p := make(map[string][]string)
 	p["action"] = []string{m.mode}
 	p["tos"] = []string{m.contacts}
-	p["content"] = []string{"http://" + ip + "/getFile/download?JobId=" + id}
+	p["content"] = []string{"http://" + m.ip + "/getFile/download?JobId=" + id}
 	if config.Debug {
 		Log.Println("send result to ", config.MsgApi, p)
 	}

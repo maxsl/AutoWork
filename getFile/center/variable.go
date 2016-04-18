@@ -46,10 +46,12 @@ var (
 	config             cfg               = cfg{ListenIP: ":2789", Relationship: "relationship.json",
 		Debug: true, Log: "center.log", TmpDir: "tmp"}
 	configFile string
+	Daemon     bool
 )
 
 func init() {
 	flag.StringVar(&configFile, "-c", "center_cfg.json", "-c config-path")
+	flag.BoolVar(&Daemon, "D", false, "-D")
 	flag.Parse()
 }
 

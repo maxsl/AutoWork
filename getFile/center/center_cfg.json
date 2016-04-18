@@ -2,6 +2,7 @@
 "Relationship":"relationship.txt",
 "Debug":true,
 "Log":"center.log",
-"WhiteList":"172.18.80.247,127.0.0.1",
-"TmpDir":"tmp"
+"WhiteList":"127.0.0.1,172.16.151.25",
+"TmpDir":"tmp",
+"MsgApi":""
 } 

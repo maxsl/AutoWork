@@ -24,6 +24,7 @@ type cfg struct {
 
 var (
 	configFile string
+	Daemon     bool
 )
 
 var config cfg = cfg{Path: "/tmp",
@@ -36,9 +37,13 @@ var config cfg = cfg{Path: "/tmp",
 
 var Log *log.Logger
 
-func Init() {
+func init() {
+	flag.BoolVar(&Daemon, "D", false, "-D")
 	flag.StringVar(&configFile, "c", "getFile.json", "-c config-file-name")
 	flag.Parse()
+}
+
+func Init() {
 	buf, err := ioutil.ReadFile(configFile)
 	if err == nil {
 		err = json.Unmarshal(buf, &config)

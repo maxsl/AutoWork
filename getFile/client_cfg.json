@@ -1,7 +1,10 @@
 {"FullDir":true,
 "Files":"./",
 "Date":0,
-"Reg":"*.txt",
-"IPlist":"172.18.80.247",
+"Reg":"",
+"IPlist":"172.16.151.25",
 "Port":"1789",
-"Host":"172.18.80.247:2789"}
+"Host":"",
+"Mode":"rtx",
+"Contact":"小狄"
+}

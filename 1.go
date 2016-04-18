@@ -8,19 +8,27 @@ import (
 )
 
 func main() {
-	if os.Getppid() != 1 {
-		os.StartProcess(os.Args[0], os.Args, &os.ProcAttr{Files: []*os.File{os.Stdin, os.Stdout, os.Stderr}})
-		return
+	if center.Daemon {
+		if os.Getppid() != 1 {
+			os.StartProcess(os.Args[0], os.Args, &os.ProcAttr{Files: []*os.File{os.Stdin, os.Stdout, os.Stderr}})
+			return
+		} else {
+			center.Server()
+		}
 	} else {
 		center.Server()
 	}
 }
 
-////func cmain() {
-////	if os.Getppid() != 1 {
-////		os.StartProcess(os.Args[0], os.Args, &os.ProcAttr{Files: []*os.File{os.Stdin, os.Stdout, os.Stderr}})
-////		return
-////	} else {
-////		getFile.Server()
-////	}
-////}
+//func main() {
+//	if getFile.Daemon {
+//		if os.Getppid() != 1 {
+//			os.StartProcess(os.Args[0], os.Args, &os.ProcAttr{Files: []*os.File{os.Stdin, os.Stdout, os.Stderr}})
+//			return
+//		} else {
+//			getFile.Server()
+//		}
+//	} else {
+//		getFile.Server()
+//	}
+//}
