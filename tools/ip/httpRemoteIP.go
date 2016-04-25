@@ -6,7 +6,7 @@ import (
 )
 
 func RemoteIP(r *http.Request) string {
-	l := strings.Split(r.RemoteAddr, "/")
+	l := strings.Split(r.RemoteAddr, ":")
 	if len(l) != 2 {
 		return ""
 	}
