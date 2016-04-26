@@ -16,6 +16,7 @@ func Server(addr string) (net.Listener, error) {
 
 func Servertls(addr, crt, key string) (net.Listener, error) {
 	cert, err := tls.LoadX509KeyPair(crt, key)
+
 	if err != nil {
 		return nil, err
 	}

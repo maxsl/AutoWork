@@ -6,10 +6,17 @@ import (
 	"testing"
 )
 
+const (
+	spem = "../../server.pem"
+	skey = "../../server.key"
+	ckey = "../../client.key"
+	cpem = "../../client.pem"
+)
+
 func Test_client(t *testing.T) {
 	go t_server()
 
-	con, err := ClientTls("127.0.0.1:1789", "../certs/client.pem", "../certs/client.key")
+	con, err := ClientTls("127.0.0.1:1789", cpem, ckey)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -29,7 +36,7 @@ func Test_client(t *testing.T) {
 	fmt.Println(string(buf[:n]))
 }
 func Benchmark_cleint(b *testing.B) {
-	con, err := ClientTls("127.0.0.1:1789", "../certs/client.pem", "../certs/client.key")
+	con, err := ClientTls("127.0.0.1:1789", cpem, ckey)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -51,7 +58,7 @@ func Benchmark_cleint(b *testing.B) {
 	}
 }
 func t_server() {
-	lis, err := Servertls(":1789", "../certs/server.pem", "../certs/server.key")
+	lis, err := Servertls(":1789", spem, skey)
 	if err != nil {
 		fmt.Println(err)
 		return
