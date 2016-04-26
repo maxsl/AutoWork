@@ -7,10 +7,10 @@ import (
 )
 
 const (
-	spem = "../../server.pem"
-	skey = "../../server.key"
-	ckey = "../../client.key"
-	cpem = "../../client.pem"
+	spem = "../certs/server.pem"
+	skey = "../certs/server.key"
+	ckey = "../certs/client.key"
+	cpem = "../certs/client.pem"
 )
 
 func Test_client(t *testing.T) {

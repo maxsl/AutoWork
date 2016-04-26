@@ -32,8 +32,10 @@ type HeadConnection struct {
 func (hc *HeadConnection) readHead() error {
 	hc.lock.RLock()
 	if hc.MsgLen > 0 {
+		hc.lock.RUnlock()
 		return msgIsNotNull
 	}
+	hc.lock.RUnlock()
 
 	head := make([]byte, HeadLenght)
 	l, err := hc.rwc.Read(head)
@@ -110,11 +112,11 @@ func putConnction(h *HeadConnection) {
 //如果消息长度超过4个字节可以改变HeadLenght的值.
 //首先判断下消息长度有没有超出限制.
 //head的前两个字节是设置一下消息类型.
-func NewHeadByte(t [2]byte, l int64) []byte {
+func NewMsgBytes(t [2]byte, l int64) []byte {
 	if (HeadLenght-2)*7-1 < l {
 		return nil
 	}
-	b := make([]byte, HeadLenght)
+	b := make([]byte, HeadLenght+l)
 	b[0], b[1] = t[0], t[1]
 	binary.PutVarint(b[2:HeadLenght], l)
 	return b
