@@ -12,18 +12,16 @@ import (
 	"time"
 )
 
-/*
-func main() {
-	info := CertInformation{Country: []string{"中国"}, Organization: []string{"游戏蜗牛"},
-		OrganizationalUnit: []string{"blog.csdn.net/fyxichen"}, EmailAddress: []string{"czxichen@163.com"},
-		StreetAddress: []string{"中心大道西171"}, Province: []string{"江苏省·工业园区"}, SubjectKeyId: []byte{1, 2, 3, 4, 5, 6},
-		Certificate: "client.pem", PrivateKey: "client.key", ROOTCertificate: "server.pem", ROOTPrivateKey: "server.key"}
-	err := CreateCerts(info)
-	if err != nil {
-		println(err.Error())
-	}
-}
-*/
+//func main() {
+//	info := CertInformation{Country: []string{"中国"}, Organization: []string{"游戏蜗牛"},
+//		OrganizationalUnit: []string{"blog.csdn.net/fyxichen"}, EmailAddress: []string{"czxichen@163.com"},
+//		StreetAddress: []string{"中心大道西171"}, Province: []string{"江苏省·工业园区"}, SubjectKeyId: []byte{1, 2, 3, 4, 5, 6},
+//		Certificate: "client.pem", PrivateKey: "client.key", ROOTCertificate: "server.pem", ROOTPrivateKey: "server.key"}
+//	err := CreateCerts(info)
+//	if err != nil {
+//		println(err.Error())
+//	}
+//}
 
 type CertInformation struct {
 	Country            []string
@@ -151,4 +149,14 @@ func newCertificate(info CertInformation) *x509.Certificate {
 		KeyUsage:       x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 		EmailAddresses: info.EmailAddress,
 	}
+}
+
+func ParseCert(crt string) ([]byte, error) {
+	buf, err := ioutil.ReadFile(crt)
+	if err != nil {
+		return nil, err
+	}
+	p := &pem.Block{}
+	p, buf = pem.Decode(buf)
+	return p.Bytes, nil
 }
